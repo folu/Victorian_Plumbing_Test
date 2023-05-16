@@ -16,50 +16,133 @@ namespace Victorian_Plumbing_Test
             currentAmount = 0;
             this.inventory = inventory.ToDictionary(p => p.Name, p => p);
         }
+        private static readonly Dictionary<string, decimal> CoinValues = new Dictionary<string, decimal>
+        {
+            ["1p"] = 0.01m,
+            ["2p"] = 0.02m,
+            ["5p"] = 0.05m,
+            ["10p"] = 0.10m,
+            ["20p"] = 0.20m,
+            ["50p"] = 0.50m,
+            ["£1"] = 1.00m,
+            ["£2"] = 2.00m
+        };
 
         public void Display()
         {
-            Console.WriteLine(currentAmount == 0 ? "INSERT COIN" : $"£{currentAmount:0.00}");
+            if (!CanMakeChange())
+            {
+                Console.WriteLine("EXACT CHANGE ONLY");
+            }
+            else if (currentAmount == 0)
+            {
+                Console.WriteLine("INSERT COIN");
+            }
+            else
+            {
+                Console.WriteLine($"£{currentAmount:0.00}");
+            }
         }
 
         public void ProcessInput(string input)
         {
-            var coinValues = new Dictionary<string, decimal>
+            if (input == "return")
             {
-                ["1p"] = 0.01m,
-                ["2p"] = 0.02m,
-                ["5p"] = 0.05m,
-                ["10p"] = 0.10m,
-                ["20p"] = 0.20m,
-                ["50p"] = 0.50m,
-                ["£1"] = 1.00m,
-                ["£2"] = 2.00m,
-            };
+                ReturnCoins();
+                return;
+            }
 
             var selectedProduct = inventory.Values.FirstOrDefault(p => p.Name == input);
             if (selectedProduct != null)
             {
-                if (currentAmount >= selectedProduct.Price)
-                {
-                    currentAmount -= selectedProduct.Price;
-                    selectedProduct.Dispense();
-                    Display();
-                    Console.WriteLine("THANK YOU");
-                }
-                else
-                {
-                    Console.WriteLine($"PRICE £{selectedProduct.Price:0.00}");
-                }
+                ProcessProductSelection(selectedProduct);
             }
-            else if (coinValues.ContainsKey(input))
+            else if (CoinValues.ContainsKey(input))
             {
-                currentAmount += coinValues[input];
-                Display();
+                AcceptCoin(input);
             }
             else
             {
                 Console.WriteLine("Invalid input. Please enter a valid coin or product.");
             }
+        }
+
+        private bool CanMakeChange()
+        {
+            foreach (var product in inventory.Values)
+            {
+                if (product.Quantity > 0 && currentAmount > product.Price)
+                {
+                    decimal change = currentAmount - product.Price;
+                    if (HasSufficientChange(change))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool HasSufficientChange(decimal amount)
+        {
+            foreach (var coinValue in CoinValues.Values.OrderByDescending(v => v))
+            {
+                if (amount >= coinValue)
+                {
+                    int numberOfCoins = (int)(amount / coinValue);
+                    amount -= numberOfCoins * coinValue;
+
+                    if (amount == 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void AcceptCoin(string coin)
+        {
+            if (CoinValues.TryGetValue(coin, out decimal coinValue))
+            {
+                currentAmount += coinValue;
+                Display();
+            }
+        }
+
+        private void ProcessProductSelection(Product product)
+        {
+            if (product.Quantity == 0)
+            {
+                Console.WriteLine("SOLD OUT");
+            }
+            else if (currentAmount >= product.Price)
+            {
+                if (currentAmount == product.Price)
+                {
+                    Console.WriteLine("Exact change received.");
+                }
+                else
+                {
+                    Console.WriteLine("Change dispensed.");
+                }
+
+                currentAmount -= product.Price;
+                product.Dispense();
+                Display();
+                Console.WriteLine("THANK YOU");
+            }
+            else
+            {
+                Console.WriteLine($"PRICE £{product.Price:0.00}");
+            }
+        }
+
+        private void ReturnCoins()
+        {
+            Console.WriteLine($"Returned: £{currentAmount:0.00}");
+            currentAmount = 0;
+            Display();
         }
     }
 }

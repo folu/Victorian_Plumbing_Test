@@ -10,16 +10,17 @@ namespace Victorian_Plumbing_Test
     {
         static void Main(string[] args)
         {
-            IVendingMachine machine;
-
-            var inventory = new List<Product>
+            IVendingMachine vendingMachine;
+            var products = new List<Product>
             {
-                new Product("cola", 1.00m),
-                new Product("crisps", 0.50m),
-                new Product("chocolate", 0.65m)
+                new Product("cola", 1.00m, 5),
+                new Product("crisps", 0.50m, 10),
+                new Product("chocolate", 0.65m, 3)
             };
-            machine = new VendingMachine(inventory);
-            machine.Display();
+
+            vendingMachine = new VendingMachine(products);
+            vendingMachine.Display();
+
             while (true)
             {
                 string input = Console.ReadLine();
@@ -27,7 +28,7 @@ namespace Victorian_Plumbing_Test
                 {
                     break;
                 }
-                machine.ProcessInput(input);
+                vendingMachine.ProcessInput(input);
             }
         }
     }
